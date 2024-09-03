@@ -540,8 +540,8 @@ def get_syllables_word(word: str, technical: bool = False) -> List[str]:
     return word_syllables
 
 
-def get_syllables_flat(text: str, technical: bool = False) -> List[str]:
-    """Get syllables from a Sanskrit (Devanagari) text and return them in a single flattened list.
+def get_syllables_flat_improved(text: str, technical: bool = False) -> List[str]:
+    """Get syllables from a Sanskrit (Devanagari) text with improved handling of halanta and avagraha.
 
     Parameters
     ----------
@@ -563,8 +563,21 @@ def get_syllables_flat(text: str, technical: bool = False) -> List[str]:
         words = line.split()
         for word in words:
             word_syllables = get_syllables_word(word, technical)
+            
+            # Merge the last syllable with the second last if it ends with halanta
+            if len(word_syllables) > 1 and word_syllables[-1].endswith(HALANTA):
+                word_syllables[-2] += word_syllables[-1]
+                word_syllables.pop()
+            
+            # Remove avagraha from syllables
+            word_syllables = [syl for syl in word_syllables if syl != AVAGRAHA]
+            
             syllables.extend(word_syllables)
     return syllables
+
+# Helper function to count syllables
+def count_syllables(text: str) -> int:
+    return len(get_syllables_flat_improved(text))
 
 def get_syllables(text: str, technical: bool = False) -> List[List[List[str]]]:
     """Get syllables from a Sanskrit (Devanagari) text
@@ -1277,7 +1290,7 @@ def check_anushtup_constraint(text: str) -> bool:
         return False
     
     for i, pada in enumerate(padas):
-        syllables = get_syllables_flat(pada)
+        syllables = get_syllables_flat_improved(pada)
         if len(syllables) != 8:
             return False
         
@@ -1316,7 +1329,7 @@ class ProgressTrackingLogitsProcessor(LogitsProcessor):
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         text = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-        new_syllables = len(get_syllables_flat(text))
+        new_syllables = count_syllables(text)
         if new_syllables > self.current_syllables:
             self.progress_bar.update(new_syllables - self.current_syllables)
             self.current_syllables = new_syllables
@@ -1332,7 +1345,7 @@ class SanskritAnushtupConstraintLogitsProcessor(LogitsProcessor):
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         current_text = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-        current_syllables = len(get_syllables_flat(current_text))
+        current_syllables = count_syllables(current_text)
         
         if current_syllables >= 32:
             # If we've reached 32 syllables, only allow end of sequence token
@@ -1347,7 +1360,7 @@ class SanskritAnushtupConstraintLogitsProcessor(LogitsProcessor):
         for token_idx in self.sanskrit_token_ids:
             next_token = self.tokenizer.decode([token_idx])
             candidate_text = current_text + next_token
-            candidate_syllables = len(get_syllables_flat(candidate_text))
+            candidate_syllables = count_syllables(candidate_text)
             
             if candidate_syllables > 32:
                 scores[0, token_idx] = float('-inf')
@@ -1359,6 +1372,7 @@ class SanskritAnushtupConstraintLogitsProcessor(LogitsProcessor):
                     scores[0, token_idx] = float('-inf')
         
         return scores
+
 
 def get_sanskrit_token_ids(tokenizer, target_lang="san_Deva"):
     all_token_ids = list(range(tokenizer.vocab_size))
@@ -1372,7 +1386,7 @@ def get_sanskrit_token_ids(tokenizer, target_lang="san_Deva"):
 def check_partial_anushtup_constraint(text: str) -> bool:
     """Check if the given partial text adheres to the Anushtup meter rules so far"""
     clean_text = clean(text, spaces=True)
-    syllables = get_syllables_flat(clean_text)
+    syllables = get_syllables_flat_improved(clean_text)
     num_syllables = len(syllables)
     
     if num_syllables > 32:
@@ -1449,7 +1463,7 @@ def generate_anushtup_verse(model, tokenizer, input_text: str, target_lang: str 
 
 # Example usage
 import json
-with open("/home/pretam-pg/poetrygen/data/data.json" ,'r') as f:
+with open("/home/pretam-pg/poetrygen/constrained_decoding/data.json" ,'r') as f:
     data = json.load(f)
 
 results = []
@@ -1462,15 +1476,15 @@ for verse in data['verses']:
     sanskrit_verse = generate_anushtup_verse(model, tokenizer, eng)
     print("################SANSKRIT VERSE###############")
     print(sanskrit_verse)
-    syllables = get_syllables_flat(sanskrit_verse)
+    syllables = get_syllables_flat_improved(sanskrit_verse)
     print(f"\nTotal syllables: {len(syllables)}")
     anushtup_gen['english'] = eng
     anushtup_gen['ground_truth'] = sans
-    anushtup_gen['ground_truth_syllable_count'] = len(get_syllables_flat(sans))
+    anushtup_gen['ground_truth_syllable_count'] = len(get_syllables_flat_improved(sans))
     anushtup_gen['anushtup_generated'] = sanskrit_verse   
-    anushtup_gen['anushtup_generated_syllable_count'] = len(get_syllables_flat(sanskrit_verse))
+    anushtup_gen['anushtup_generated_syllable_count'] = len(get_syllables_flat_improved(sanskrit_verse))
     results.append(anushtup_gen)
 
-with open("/home/pretam-pg/poetrygen/data/contrained_decoding.json",'w') as file:
+with open("./contrained_decoding.json",'w') as file:
     json.dump(results, file, ensure_ascii=False, indent=4)
     print(f"Results written to {file}")
