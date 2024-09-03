@@ -4,74 +4,266 @@
         "ground_truth": "कोन्वस्मिन्साम्प्रतं लोके गुणवान्कश्च वीर्यवान् ।धर्मज्ञश्च कृतज्ञश्च सत्यवाक्यो दृढव्रत:।।",
         "ground_truth_syllable_count": 32,
         "ground_truth_syllables": [
-            "को",
-            "न्व",
-            "स्मि",
-            "न्सा",
-            "म्प्र",
-            "तं",
-            "लो",
-            "के",
-            "गु",
-            "ण",
-            "वा",
-            "न्क",
-            "श्च",
-            "वी",
-            "र्य",
-            "वान्",
-            "ध",
-            "र्म",
-            "ज्ञ",
-            "श्च",
-            "कृ",
-            "त",
-            "ज्ञ",
-            "श्च",
-            "स",
-            "त्य",
-            "वा",
-            "क्यो",
-            "दृ",
-            "ढ",
-            "व्र",
-            "त"
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "न्व",
+                "type": "L"
+            },
+            {
+                "syllable": "स्मि",
+                "type": "L"
+            },
+            {
+                "syllable": "न्सा",
+                "type": "G"
+            },
+            {
+                "syllable": "म्प्र",
+                "type": "L"
+            },
+            {
+                "syllable": "तं",
+                "type": "G"
+            },
+            {
+                "syllable": "लो",
+                "type": "G"
+            },
+            {
+                "syllable": "के",
+                "type": "G"
+            },
+            {
+                "syllable": "गु",
+                "type": "L"
+            },
+            {
+                "syllable": "ण",
+                "type": "L"
+            },
+            {
+                "syllable": "वा",
+                "type": "G"
+            },
+            {
+                "syllable": "न्क",
+                "type": "L"
+            },
+            {
+                "syllable": "श्च",
+                "type": "L"
+            },
+            {
+                "syllable": "वी",
+                "type": "G"
+            },
+            {
+                "syllable": "र्य",
+                "type": "L"
+            },
+            {
+                "syllable": "वान्",
+                "type": "G"
+            },
+            {
+                "syllable": "ध",
+                "type": "L"
+            },
+            {
+                "syllable": "र्म",
+                "type": "L"
+            },
+            {
+                "syllable": "ज्ञ",
+                "type": "L"
+            },
+            {
+                "syllable": "श्च",
+                "type": "L"
+            },
+            {
+                "syllable": "कृ",
+                "type": "L"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "ज्ञ",
+                "type": "L"
+            },
+            {
+                "syllable": "श्च",
+                "type": "L"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "त्य",
+                "type": "L"
+            },
+            {
+                "syllable": "वा",
+                "type": "G"
+            },
+            {
+                "syllable": "क्यो",
+                "type": "G"
+            },
+            {
+                "syllable": "दृ",
+                "type": "L"
+            },
+            {
+                "syllable": "ढ",
+                "type": "L"
+            },
+            {
+                "syllable": "व्र",
+                "type": "L"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            }
         ],
         "anushtup_generated": "इदानीं येषु लोकेषु उत्कृष्टं गुणः प्रदक्षिणम् आभासीः कृतज्ञतायाः सत्यता च दृढता",
         "anushtup_generated_syllable_count": 32,
         "anushtup_generated_syllables": [
-            "इ",
-            "दा",
-            "नीं",
-            "ये",
-            "षु",
-            "लो",
-            "के",
-            "षु",
-            "उ",
-            "त्कृ",
-            "ष्टं",
-            "गु",
-            "णः",
-            "प्र",
-            "द",
-            "क्षि",
-            "णम्",
-            "आ",
-            "भा",
-            "सीः",
-            "कृ",
-            "त",
-            "ज्ञ",
-            "ता",
-            "याः",
-            "स",
-            "त्य",
-            "ता",
-            "च",
-            "दृ",
-            "ढ",
-            "ता"
+            {
+                "syllable": "इ",
+                "type": "L"
+            },
+            {
+                "syllable": "दा",
+                "type": "G"
+            },
+            {
+                "syllable": "नीं",
+                "type": "G"
+            },
+            {
+                "syllable": "ये",
+                "type": "G"
+            },
+            {
+                "syllable": "षु",
+                "type": "L"
+            },
+            {
+                "syllable": "लो",
+                "type": "G"
+            },
+            {
+                "syllable": "के",
+                "type": "G"
+            },
+            {
+                "syllable": "षु",
+                "type": "L"
+            },
+            {
+                "syllable": "उ",
+                "type": "L"
+            },
+            {
+                "syllable": "त्कृ",
+                "type": "L"
+            },
+            {
+                "syllable": "ष्टं",
+                "type": "G"
+            },
+            {
+                "syllable": "गु",
+                "type": "L"
+            },
+            {
+                "syllable": "णः",
+                "type": "G"
+            },
+            {
+                "syllable": "प्र",
+                "type": "L"
+            },
+            {
+                "syllable": "द",
+                "type": "L"
+            },
+            {
+                "syllable": "क्षि",
+                "type": "L"
+            },
+            {
+                "syllable": "णम्",
+                "type": "L"
+            },
+            {
+                "syllable": "आ",
+                "type": "G"
+            },
+            {
+                "syllable": "भा",
+                "type": "G"
+            },
+            {
+                "syllable": "सीः",
+                "type": "G"
+            },
+            {
+                "syllable": "कृ",
+                "type": "L"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "ज्ञ",
+                "type": "L"
+            },
+            {
+                "syllable": "ता",
+                "type": "G"
+            },
+            {
+                "syllable": "याः",
+                "type": "G"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "त्य",
+                "type": "L"
+            },
+            {
+                "syllable": "ता",
+                "type": "G"
+            },
+            {
+                "syllable": "च",
+                "type": "L"
+            },
+            {
+                "syllable": "दृ",
+                "type": "L"
+            },
+            {
+                "syllable": "ढ",
+                "type": "L"
+            },
+            {
+                "syllable": "ता",
+                "type": "G"
+            }
         ]
     },
     {
@@ -79,74 +271,266 @@
         "ground_truth": "चारित्रेण च को युक्तस्सर्वभूतेषु को हित: ।विद्वान्क: कस्समर्थश्च कश्चैकप्रियदर्शन: ।।",
         "ground_truth_syllable_count": 32,
         "ground_truth_syllables": [
-            "चा",
-            "रि",
-            "त्रे",
-            "ण",
-            "च",
-            "को",
-            "यु",
-            "क्त",
-            "स्स",
-            "र्व",
-            "भू",
-            "ते",
-            "षु",
-            "को",
-            "हि",
-            "त",
-            "वि",
-            "द्वा",
-            "न्क",
-            "क",
-            "स्स",
-            "म",
-            "र्थ",
-            "श्च",
-            "क",
-            "श्चै",
-            "क",
-            "प्रि",
-            "य",
-            "द",
-            "र्श",
-            "न"
+            {
+                "syllable": "चा",
+                "type": "G"
+            },
+            {
+                "syllable": "रि",
+                "type": "L"
+            },
+            {
+                "syllable": "त्रे",
+                "type": "G"
+            },
+            {
+                "syllable": "ण",
+                "type": "L"
+            },
+            {
+                "syllable": "च",
+                "type": "L"
+            },
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "यु",
+                "type": "L"
+            },
+            {
+                "syllable": "क्त",
+                "type": "L"
+            },
+            {
+                "syllable": "स्स",
+                "type": "L"
+            },
+            {
+                "syllable": "र्व",
+                "type": "L"
+            },
+            {
+                "syllable": "भू",
+                "type": "G"
+            },
+            {
+                "syllable": "ते",
+                "type": "G"
+            },
+            {
+                "syllable": "षु",
+                "type": "L"
+            },
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "हि",
+                "type": "L"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "वि",
+                "type": "L"
+            },
+            {
+                "syllable": "द्वा",
+                "type": "G"
+            },
+            {
+                "syllable": "न्क",
+                "type": "L"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "स्स",
+                "type": "L"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "र्थ",
+                "type": "L"
+            },
+            {
+                "syllable": "श्च",
+                "type": "L"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "श्चै",
+                "type": "G"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "प्रि",
+                "type": "L"
+            },
+            {
+                "syllable": "य",
+                "type": "L"
+            },
+            {
+                "syllable": "द",
+                "type": "L"
+            },
+            {
+                "syllable": "र्श",
+                "type": "L"
+            },
+            {
+                "syllable": "न",
+                "type": "L"
+            }
         ],
         "anushtup_generated": "कोऽस्ति स यः सुव्यवहाराद्भविष्यत् सर्व्वजीवानां कल्याणम् उपदिश्यते स सर्व्वज्ञानां ज्ञान",
         "anushtup_generated_syllable_count": 32,
         "anushtup_generated_syllables": [
-            "को",
-            "स्ति",
-            "स",
-            "यः",
-            "सु",
-            "व्य",
-            "व",
-            "हा",
-            "रा",
-            "द्भ",
-            "वि",
-            "ष्यत्",
-            "स",
-            "र्व्व",
-            "जी",
-            "वा",
-            "नां",
-            "क",
-            "ल्या",
-            "णम्",
-            "उ",
-            "प",
-            "दि",
-            "श्य",
-            "ते",
-            "स",
-            "स",
-            "र्व्व",
-            "ज्ञा",
-            "नां",
-            "ज्ञा",
-            "न"
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "स्ति",
+                "type": "L"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "यः",
+                "type": "G"
+            },
+            {
+                "syllable": "सु",
+                "type": "L"
+            },
+            {
+                "syllable": "व्य",
+                "type": "L"
+            },
+            {
+                "syllable": "व",
+                "type": "L"
+            },
+            {
+                "syllable": "हा",
+                "type": "G"
+            },
+            {
+                "syllable": "रा",
+                "type": "G"
+            },
+            {
+                "syllable": "द्भ",
+                "type": "L"
+            },
+            {
+                "syllable": "वि",
+                "type": "L"
+            },
+            {
+                "syllable": "ष्यत्",
+                "type": "L"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "र्व्व",
+                "type": "L"
+            },
+            {
+                "syllable": "जी",
+                "type": "G"
+            },
+            {
+                "syllable": "वा",
+                "type": "G"
+            },
+            {
+                "syllable": "नां",
+                "type": "G"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "ल्या",
+                "type": "G"
+            },
+            {
+                "syllable": "णम्",
+                "type": "L"
+            },
+            {
+                "syllable": "उ",
+                "type": "L"
+            },
+            {
+                "syllable": "प",
+                "type": "L"
+            },
+            {
+                "syllable": "दि",
+                "type": "L"
+            },
+            {
+                "syllable": "श्य",
+                "type": "L"
+            },
+            {
+                "syllable": "ते",
+                "type": "G"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "र्व्व",
+                "type": "L"
+            },
+            {
+                "syllable": "ज्ञा",
+                "type": "G"
+            },
+            {
+                "syllable": "नां",
+                "type": "G"
+            },
+            {
+                "syllable": "ज्ञा",
+                "type": "G"
+            },
+            {
+                "syllable": "न",
+                "type": "L"
+            }
         ]
     },
     {
@@ -154,74 +538,266 @@
         "ground_truth": "आत्मवान्को जितक्रोधो द्युतिमान्कोऽनसूयक: । कस्य बिभ्यति देवाश्च जातरोषस्य संयुगे ।।",
         "ground_truth_syllable_count": 32,
         "ground_truth_syllables": [
-            "आ",
-            "त्म",
-            "वा",
-            "न्को",
-            "जि",
-            "त",
-            "क्रो",
-            "धो",
-            "द्यु",
-            "ति",
-            "मा",
-            "न्को",
-            "न",
-            "सू",
-            "य",
-            "क",
-            "क",
-            "स्य",
-            "बि",
-            "भ्य",
-            "ति",
-            "दे",
-            "वा",
-            "श्च",
-            "जा",
-            "त",
-            "रो",
-            "ष",
-            "स्य",
-            "सं",
-            "यु",
-            "गे"
+            {
+                "syllable": "आ",
+                "type": "G"
+            },
+            {
+                "syllable": "त्म",
+                "type": "L"
+            },
+            {
+                "syllable": "वा",
+                "type": "G"
+            },
+            {
+                "syllable": "न्को",
+                "type": "G"
+            },
+            {
+                "syllable": "जि",
+                "type": "L"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "क्रो",
+                "type": "G"
+            },
+            {
+                "syllable": "धो",
+                "type": "G"
+            },
+            {
+                "syllable": "द्यु",
+                "type": "L"
+            },
+            {
+                "syllable": "ति",
+                "type": "L"
+            },
+            {
+                "syllable": "मा",
+                "type": "G"
+            },
+            {
+                "syllable": "न्को",
+                "type": "G"
+            },
+            {
+                "syllable": "न",
+                "type": "L"
+            },
+            {
+                "syllable": "सू",
+                "type": "G"
+            },
+            {
+                "syllable": "य",
+                "type": "L"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "स्य",
+                "type": "L"
+            },
+            {
+                "syllable": "बि",
+                "type": "L"
+            },
+            {
+                "syllable": "भ्य",
+                "type": "L"
+            },
+            {
+                "syllable": "ति",
+                "type": "L"
+            },
+            {
+                "syllable": "दे",
+                "type": "G"
+            },
+            {
+                "syllable": "वा",
+                "type": "G"
+            },
+            {
+                "syllable": "श्च",
+                "type": "L"
+            },
+            {
+                "syllable": "जा",
+                "type": "G"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "रो",
+                "type": "G"
+            },
+            {
+                "syllable": "ष",
+                "type": "L"
+            },
+            {
+                "syllable": "स्य",
+                "type": "L"
+            },
+            {
+                "syllable": "सं",
+                "type": "G"
+            },
+            {
+                "syllable": "यु",
+                "type": "L"
+            },
+            {
+                "syllable": "गे",
+                "type": "G"
+            }
         ],
         "anushtup_generated": "मनुष्याणां मध्ये कोऽस्ति संयमीः कोऽस्ति क्रोधेन पराजितवान् कोऽस्ति तेजस्वीः सन्निधाय च कोऽ",
         "anushtup_generated_syllable_count": 32,
         "anushtup_generated_syllables": [
-            "म",
-            "नु",
-            "ष्या",
-            "णां",
-            "म",
-            "ध्ये",
-            "को",
-            "स्ति",
-            "सं",
-            "य",
-            "मीः",
-            "को",
-            "स्ति",
-            "क्रो",
-            "धे",
-            "न",
-            "प",
-            "रा",
-            "जि",
-            "त",
-            "वान्",
-            "को",
-            "स्ति",
-            "ते",
-            "ज",
-            "स्वीः",
-            "स",
-            "न्नि",
-            "धा",
-            "य",
-            "च",
-            "को"
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "नु",
+                "type": "L"
+            },
+            {
+                "syllable": "ष्या",
+                "type": "G"
+            },
+            {
+                "syllable": "णां",
+                "type": "G"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "ध्ये",
+                "type": "G"
+            },
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "स्ति",
+                "type": "L"
+            },
+            {
+                "syllable": "सं",
+                "type": "G"
+            },
+            {
+                "syllable": "य",
+                "type": "L"
+            },
+            {
+                "syllable": "मीः",
+                "type": "G"
+            },
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "स्ति",
+                "type": "L"
+            },
+            {
+                "syllable": "क्रो",
+                "type": "G"
+            },
+            {
+                "syllable": "धे",
+                "type": "G"
+            },
+            {
+                "syllable": "न",
+                "type": "L"
+            },
+            {
+                "syllable": "प",
+                "type": "L"
+            },
+            {
+                "syllable": "रा",
+                "type": "G"
+            },
+            {
+                "syllable": "जि",
+                "type": "L"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "वान्",
+                "type": "G"
+            },
+            {
+                "syllable": "को",
+                "type": "G"
+            },
+            {
+                "syllable": "स्ति",
+                "type": "L"
+            },
+            {
+                "syllable": "ते",
+                "type": "G"
+            },
+            {
+                "syllable": "ज",
+                "type": "L"
+            },
+            {
+                "syllable": "स्वीः",
+                "type": "G"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "न्नि",
+                "type": "L"
+            },
+            {
+                "syllable": "धा",
+                "type": "G"
+            },
+            {
+                "syllable": "य",
+                "type": "L"
+            },
+            {
+                "syllable": "च",
+                "type": "L"
+            },
+            {
+                "syllable": "को",
+                "type": "G"
+            }
         ]
     },
     {
@@ -229,74 +805,266 @@
         "ground_truth": "एतदिच्छाम्यहं श्रोतुं परं कौतूहलं हि मे ।महर्षे त्वं समर्थोऽसि ज्ञातुमेवंविधं नरम् ।।",
         "ground_truth_syllable_count": 32,
         "ground_truth_syllables": [
-            "ए",
-            "त",
-            "दि",
-            "च्छा",
-            "म्य",
-            "हं",
-            "श्रो",
-            "तुं",
-            "प",
-            "रं",
-            "कौ",
-            "तू",
-            "ह",
-            "लं",
-            "हि",
-            "मे",
-            "म",
-            "ह",
-            "र्षे",
-            "त्वं",
-            "स",
-            "म",
-            "र्थो",
-            "सि",
-            "ज्ञा",
-            "तु",
-            "मे",
-            "वं",
-            "वि",
-            "धं",
-            "न",
-            "रम्"
+            {
+                "syllable": "ए",
+                "type": "G"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "दि",
+                "type": "L"
+            },
+            {
+                "syllable": "च्छा",
+                "type": "G"
+            },
+            {
+                "syllable": "म्य",
+                "type": "L"
+            },
+            {
+                "syllable": "हं",
+                "type": "G"
+            },
+            {
+                "syllable": "श्रो",
+                "type": "G"
+            },
+            {
+                "syllable": "तुं",
+                "type": "G"
+            },
+            {
+                "syllable": "प",
+                "type": "L"
+            },
+            {
+                "syllable": "रं",
+                "type": "G"
+            },
+            {
+                "syllable": "कौ",
+                "type": "G"
+            },
+            {
+                "syllable": "तू",
+                "type": "G"
+            },
+            {
+                "syllable": "ह",
+                "type": "L"
+            },
+            {
+                "syllable": "लं",
+                "type": "G"
+            },
+            {
+                "syllable": "हि",
+                "type": "L"
+            },
+            {
+                "syllable": "मे",
+                "type": "G"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "ह",
+                "type": "L"
+            },
+            {
+                "syllable": "र्षे",
+                "type": "G"
+            },
+            {
+                "syllable": "त्वं",
+                "type": "G"
+            },
+            {
+                "syllable": "स",
+                "type": "L"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "र्थो",
+                "type": "G"
+            },
+            {
+                "syllable": "सि",
+                "type": "L"
+            },
+            {
+                "syllable": "ज्ञा",
+                "type": "G"
+            },
+            {
+                "syllable": "तु",
+                "type": "L"
+            },
+            {
+                "syllable": "मे",
+                "type": "G"
+            },
+            {
+                "syllable": "वं",
+                "type": "G"
+            },
+            {
+                "syllable": "वि",
+                "type": "L"
+            },
+            {
+                "syllable": "धं",
+                "type": "G"
+            },
+            {
+                "syllable": "न",
+                "type": "L"
+            },
+            {
+                "syllable": "रम्",
+                "type": "L"
+            }
         ],
         "anushtup_generated": "हे महर्षि मयि एतदृशः पुरुषः कथं प्राप्नुयसि इति श्रुतम् अस्मिन्नपि महात्मानः किं",
         "anushtup_generated_syllable_count": 32,
         "anushtup_generated_syllables": [
-            "हे",
-            "म",
-            "ह",
-            "र्षि",
-            "म",
-            "यि",
-            "ए",
-            "त",
-            "दृ",
-            "शः",
-            "पु",
-            "रु",
-            "षः",
-            "क",
-            "थं",
-            "प्रा",
-            "प्नु",
-            "य",
-            "सि",
-            "इ",
-            "ति",
-            "श्रु",
-            "तम्",
-            "अ",
-            "स्मि",
-            "न्न",
-            "पि",
-            "म",
-            "हा",
-            "त्मा",
-            "नः",
-            "किं"
+            {
+                "syllable": "हे",
+                "type": "G"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "ह",
+                "type": "L"
+            },
+            {
+                "syllable": "र्षि",
+                "type": "L"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "यि",
+                "type": "L"
+            },
+            {
+                "syllable": "ए",
+                "type": "G"
+            },
+            {
+                "syllable": "त",
+                "type": "L"
+            },
+            {
+                "syllable": "दृ",
+                "type": "L"
+            },
+            {
+                "syllable": "शः",
+                "type": "G"
+            },
+            {
+                "syllable": "पु",
+                "type": "L"
+            },
+            {
+                "syllable": "रु",
+                "type": "L"
+            },
+            {
+                "syllable": "षः",
+                "type": "G"
+            },
+            {
+                "syllable": "क",
+                "type": "L"
+            },
+            {
+                "syllable": "थं",
+                "type": "G"
+            },
+            {
+                "syllable": "प्रा",
+                "type": "G"
+            },
+            {
+                "syllable": "प्नु",
+                "type": "L"
+            },
+            {
+                "syllable": "य",
+                "type": "L"
+            },
+            {
+                "syllable": "सि",
+                "type": "L"
+            },
+            {
+                "syllable": "इ",
+                "type": "L"
+            },
+            {
+                "syllable": "ति",
+                "type": "L"
+            },
+            {
+                "syllable": "श्रु",
+                "type": "L"
+            },
+            {
+                "syllable": "तम्",
+                "type": "L"
+            },
+            {
+                "syllable": "अ",
+                "type": "L"
+            },
+            {
+                "syllable": "स्मि",
+                "type": "L"
+            },
+            {
+                "syllable": "न्न",
+                "type": "L"
+            },
+            {
+                "syllable": "पि",
+                "type": "L"
+            },
+            {
+                "syllable": "म",
+                "type": "L"
+            },
+            {
+                "syllable": "हा",
+                "type": "G"
+            },
+            {
+                "syllable": "त्मा",
+                "type": "G"
+            },
+            {
+                "syllable": "नः",
+                "type": "G"
+            },
+            {
+                "syllable": "किं",
+                "type": "G"
+            }
         ]
     }
 ]
