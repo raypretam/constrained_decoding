@@ -1469,24 +1469,45 @@ with open("/home/pretam-pg/poetrygen/constrained_decoding/data.json" ,'r') as f:
 results = []
 
 
+import json
+from typing import List, Tuple
+
+def get_syllables_with_type(text: str) -> List[Tuple[str, str]]:
+    """Get syllables from text along with their type (laghu or guru)"""
+    syllables = get_syllables_flat_improved(text)
+    return [(syl, "L" if is_laghu(syl) else "G") for syl in syllables]
+
 for verse in data['verses']:
     anushtup_gen = {}
     eng = verse['english']
     sans = verse['sanskrit']
     sanskrit_verse = generate_anushtup_verse(model, tokenizer, eng)
+    
     print("################SANSKRIT VERSE###############")
     print(sanskrit_verse)
-    syllables = get_syllables_flat_improved(sanskrit_verse)
-    print(f"\nTotal syllables: {len(syllables)}")
+    
+    generated_syllables = get_syllables_with_type(sanskrit_verse)
+    ground_truth_syllables = get_syllables_with_type(sans)
+    
+    print(f"\nTotal syllables: {len(generated_syllables)}")
+    
     anushtup_gen['english'] = eng
     anushtup_gen['ground_truth'] = sans
-    anushtup_gen['ground_truth_syllable_count'] = len(get_syllables_flat_improved(sans))
-    anushtup_gen['ground_truth_syllables'] = get_syllables_flat_improved(sans)
-    anushtup_gen['anushtup_generated'] = sanskrit_verse   
-    anushtup_gen['anushtup_generated_syllable_count'] = len(get_syllables_flat_improved(sanskrit_verse))
-    anushtup_gen['anushtup_generated_syllables'] = get_syllables_flat_improved(sanskrit_verse)
+    anushtup_gen['ground_truth_syllable_count'] = len(ground_truth_syllables)
+    anushtup_gen['ground_truth_syllables'] = [
+        {"syllable": syl, "type": syl_type} 
+        for syl, syl_type in ground_truth_syllables
+    ]
+    anushtup_gen['anushtup_generated'] = sanskrit_verse
+    anushtup_gen['anushtup_generated_syllable_count'] = len(generated_syllables)
+    anushtup_gen['anushtup_generated_syllables'] = [
+        {"syllable": syl, "type": syl_type} 
+        for syl, syl_type in generated_syllables
+    ]
+    
     results.append(anushtup_gen)
 
-with open("./constrained_decoding.json",'w') as file:
+with open("./constrained_decoding.json", 'w') as file:
     json.dump(results, file, ensure_ascii=False, indent=4)
-    print(f"Results written to {file}")
+
+print(f"Results written to {file}")
