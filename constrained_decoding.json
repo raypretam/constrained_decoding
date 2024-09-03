@@ -1,0 +1,30 @@
+[
+    {
+        "english": "Who in this world lives today endowed with excellent qualities, prowess, righteousness, gratitude, truthfulness and firmness in his vows?",
+        "ground_truth": "कोन्वस्मिन्साम्प्रतं लोके गुणवान्कश्च वीर्यवान् ।धर्मज्ञश्च कृतज्ञश्च सत्यवाक्यो दृढव्रत:।।",
+        "ground_truth_syllable_count": 32,
+        "anushtup_generated": "इदानीं येषु लोकेषु उत्कृष्टं गुणः प्रदक्षिणम् आभासीः कृतज्ञतायाः सत्यता च दृढता",
+        "anushtup_generated_syllable_count": 32
+    },
+    {
+        "english": "Who is that one gifted with good conduct, given to the wellbeing of all living creatures, learned in the lore knowledge of all things that is known, capable of doing things which others can not do and singularly handsome?",
+        "ground_truth": "चारित्रेण च को युक्तस्सर्वभूतेषु को हित: ।विद्वान्क: कस्समर्थश्च कश्चैकप्रियदर्शन: ।।",
+        "ground_truth_syllable_count": 32,
+        "anushtup_generated": "कोऽस्ति स यः सुव्यवहाराद्भविष्यत् सर्व्वजीवानां कल्याणम् उपदिश्यते स सर्व्वज्ञानां ज्ञान",
+        "anushtup_generated_syllable_count": 32
+    },
+    {
+        "english": "Who among men is selfrestrained? Who has conquered anger? Who is endowed with brilliance and free from envy? Who is that when excited to wrath even the devatas, are afraid of let alone foes?",
+        "ground_truth": "आत्मवान्को जितक्रोधो द्युतिमान्कोऽनसूयक: । कस्य बिभ्यति देवाश्च जातरोषस्य संयुगे ।।",
+        "ground_truth_syllable_count": 32,
+        "anushtup_generated": "मनुष्याणां मध्ये कोऽस्ति संयमीः कोऽस्ति क्रोधेन पराजितवान् कोऽस्ति तेजस्वीः सन्निधाय च कोऽ",
+        "anushtup_generated_syllable_count": 32
+    },
+    {
+        "english": "O Maharshi, I intend to hear about such a man whom you are able to place? Indeed great is my curiosity",
+        "ground_truth": "एतदिच्छाम्यहं श्रोतुं परं कौतूहलं हि मे ।महर्षे त्वं समर्थोऽसि ज्ञातुमेवंविधं नरम् ।।",
+        "ground_truth_syllable_count": 32,
+        "anushtup_generated": "हे महर्षि मयि एतदृशः पुरुषः कथं प्राप्नुयसि इति श्रुतम् अस्मिन्नपि महात्मानः किं",
+        "anushtup_generated_syllable_count": 32
+    }
+]
