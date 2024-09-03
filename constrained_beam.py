@@ -1481,10 +1481,12 @@ for verse in data['verses']:
     anushtup_gen['english'] = eng
     anushtup_gen['ground_truth'] = sans
     anushtup_gen['ground_truth_syllable_count'] = len(get_syllables_flat_improved(sans))
+    anushtup_gen['ground_truth_syllables'] = get_syllables_flat_improved(sans)
     anushtup_gen['anushtup_generated'] = sanskrit_verse   
     anushtup_gen['anushtup_generated_syllable_count'] = len(get_syllables_flat_improved(sanskrit_verse))
+    anushtup_gen['anushtup_generated_syllables'] = get_syllables_flat_improved(sanskrit_verse)
     results.append(anushtup_gen)
 
-with open("./contrained_decoding.json",'w') as file:
+with open("./constrained_decoding.json",'w') as file:
     json.dump(results, file, ensure_ascii=False, indent=4)
     print(f"Results written to {file}")
