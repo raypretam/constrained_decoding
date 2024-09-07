@@ -377,6 +377,43 @@ def split_lines(text: str, pattern=r"[।॥\r\n]+") -> List[str]:
     """
     return list(filter(None, re.split(pattern, text)))
 
+def split_into_padas(text: str, syllables_per_pada: int = 8) -> List[str]:
+    """
+    Split a Sanskrit text into padas based on syllable count.
+
+    Parameters:
+    ----------
+    text : str
+        Input Sanskrit text
+    syllables_per_pada : int, optional
+        Number of syllables per pada (default is 8 for Anushtup meter)
+
+    Returns:
+    -------
+    List[str]
+        List of padas, each containing the specified number of syllables
+    """
+    clean_text = clean(text, spaces=True)
+    syllables = get_syllables_flat_improved(clean_text)
+    
+    padas = []
+    current_pada = []
+    syllable_count = 0
+
+    for syllable in syllables:
+        current_pada.append(syllable)
+        syllable_count += 1
+
+        if syllable_count == syllables_per_pada:
+            padas.append(''.join(current_pada))
+            current_pada = []
+            syllable_count = 0
+
+    # Add any remaining syllables as the last pada
+    if current_pada:
+        padas.append(''.join(current_pada))
+
+    return padas
 
 ###############################################################################
 
@@ -396,19 +433,13 @@ def trim_matra(line: str) -> str:
 
 
 def is_laghu(syllable: str) -> bool:
-    """Checks if the current syllable is Laghu"""
-
-    return all(
-        [
-            (
-                x in ALL_VYANJANA
-                or x in LAGHU_SWARA
-                or x in LAGHU_MATRA
-                or x == HALANTA
-            )
-            for x in syllable
-        ]
-    )
+    if any(char in syllable for char in [ANUSWARA, VISARGA]):
+        return False
+    if any(char in syllable for char in MATRA[1:] + EXTENDED_MATRA):  # Long vowels
+        return False
+    if syllable[-1] == HALANTA:
+        return False
+    return True
 
 
 def toggle_matra(syllable: str) -> str:
@@ -1270,56 +1301,117 @@ def get_baahya(text: str, abbrev: bool = False):
     return get_ucchaarana(text, dimension=2, abbrev=abbrev)
 
 
+
 ###############################################################################
 from tqdm import tqdm
+import os
 import re
 from typing import List
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, LogitsProcessor, LogitsProcessorList
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, BeamScorer, BeamSearchScorer, LogitsProcessor, LogitsProcessorList
 import torch
+import logging
+from logging.handlers import RotatingFileHandler
+
+# Set up logging
+log_dir = "logs"
+os.makedirs(log_dir, exist_ok=True)
+log_file = os.path.join(log_dir, "anushtup_generation.log")
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+file_handler = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5)
+file_handler.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+file_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
 
 model_name = "facebook/nllb-200-distilled-600M"
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name).cuda()  
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-def check_anushtup_constraint(text: str) -> bool:
-    """Check if the given text adheres to the Anushtup meter rules"""
+
+def split_into_padas(text):
     clean_text = clean(text, spaces=True)
-    padas = split_lines(clean_text)
-    
-    if len(padas) != 4:
+    syllables = get_syllables_flat_improved(clean_text)
+    padas = []
+    for i in range(0, len(syllables), 8):
+        padas.append(''.join(syllables[i:i+8]))
+    return padas
+
+
+def get_sanskrit_token_ids(tokenizer, target_lang="san_Deva"):
+    all_token_ids = list(range(tokenizer.vocab_size))
+    all_tokens = tokenizer.convert_ids_to_tokens(all_token_ids)
+    sanskrit_token_ids = [
+        token_id for token_id, token in zip(all_token_ids, all_tokens)
+        if token.startswith(target_lang) or any(char in token for char in ALPHABET)
+    ]
+    return sanskrit_token_ids
+
+def check_strict_anushtup_constraint(syllables):
+    num_syllables = len(syllables)
+    if num_syllables > 32:
         return False
     
-    for i, pada in enumerate(padas):
-        syllables = get_syllables_flat_improved(pada)
-        if len(syllables) != 8:
+    complete_padas = num_syllables // 8
+    remaining_syllables = num_syllables % 8
+    
+    for i in range(complete_padas):
+        pada_syllables = syllables[i*8:(i+1)*8]
+        # 5th syllable must be laghu
+        if len(pada_syllables) >= 5 and not is_laghu(pada_syllables[4]):
             return False
-        
-        # Rule 2: The fifth letter of every pada must be LAGHU
-        if not is_laghu(syllables[4]):
+        # 6th syllable must be guru
+        if len(pada_syllables) >= 6 and is_laghu(pada_syllables[5]):
             return False
-        
-        # Rule 1: The sixth letter of every pada must be GURU
-        if is_laghu(syllables[5]):
+    
+    # Check incomplete pada if it exists
+    if remaining_syllables > 0:
+        last_pada_syllables = syllables[complete_padas*8:]
+        if remaining_syllables >= 5 and not is_laghu(last_pada_syllables[4]):
             return False
-        
-        # Rules 3 and 4: The seventh letter of the second and fourth pada must be LAGHU (HRASVA),
-        # and the seventh letter of the first and third pada must be GURU (DEERGHA)
-        if i % 2 == 0:  # 1st and 3rd padas
-            if is_laghu(syllables[6]):
-                return False
-        else:  # 2nd and 4th padas
-            if not is_laghu(syllables[6]):
-                return False
+        if remaining_syllables >= 6 and is_laghu(last_pada_syllables[5]):
+            return False
     
     return True
 
-# import torch
-# from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, LogitsProcessor, LogitsProcessorList
-# from tqdm import tqdm
+def evaluate_strict_anushtup_fit(syllables):
+    score = 1.0
+    violations = []
+    num_syllables = len(syllables)
+    complete_padas = num_syllables // 8
+    remaining_syllables = num_syllables % 8
 
-# model_name = "facebook/nllb-200-distilled-600M"
-# model = AutoModelForSeq2SeqLM.from_pretrained(model_name).cuda()  
-# tokenizer = AutoTokenizer.from_pretrained(model_name)
+    for i in range(complete_padas):
+        pada_syllables = syllables[i*8:(i+1)*8]
+        if len(pada_syllables) >= 5 and not is_laghu(pada_syllables[4]):
+            score -= 0.2
+            violations.append(f"Pada {i+1}, 5th syllable not laghu")
+        if len(pada_syllables) >= 6 and is_laghu(pada_syllables[5]):
+            score -= 0.2
+            violations.append(f"Pada {i+1}, 6th syllable not guru")
+
+    if remaining_syllables > 0:
+        last_pada_syllables = syllables[complete_padas*8:]
+        if remaining_syllables >= 5 and not is_laghu(last_pada_syllables[4]):
+            score -= 0.2
+            violations.append(f"Last pada, 5th syllable not laghu")
+        if remaining_syllables >= 6 and is_laghu(last_pada_syllables[5]):
+            score -= 0.2
+            violations.append(f"Last pada, 6th syllable not guru")
+
+    # Penalize for incorrect syllable count
+    if num_syllables < 32:
+        score -= (32 - num_syllables) * 0.1
+        violations.append(f"Undergeneration: {num_syllables}/32 syllables")
+    elif num_syllables > 32:
+        score -= (num_syllables - 32) * 0.2
+        violations.append(f"Overgeneration: {num_syllables}/32 syllables")
+
+    return max(0, score), violations
 
 class ProgressTrackingLogitsProcessor(LogitsProcessor):
     def __init__(self, tokenizer):
@@ -1338,132 +1430,143 @@ class ProgressTrackingLogitsProcessor(LogitsProcessor):
     def close(self):
         self.progress_bar.close()
 
-class SanskritAnushtupConstraintLogitsProcessor(LogitsProcessor):
-    def __init__(self, tokenizer, sanskrit_token_ids):
+class SanskritAnushtupLogitsProcessor(LogitsProcessor):
+    def __init__(self, tokenizer, num_beams: int, sanskrit_token_ids):
         self.tokenizer = tokenizer
-        self.sanskrit_token_ids = sanskrit_token_ids
+        self.num_beams = num_beams
+        self.sanskrit_token_ids = set(sanskrit_token_ids)
+        self.generation_step = 0
+
+    def is_anushtup_critical_position(self, syllable_index: int) -> bool:
+        pada_position = syllable_index % 8
+        return pada_position in [4, 5]  # 5th or 6th position in pada
+
+    def force_anushtup_syllable(self, current_text: str, should_be_laghu: bool) -> Tuple[str, int]:
+        current_syllables = get_syllables_flat_improved(current_text)
+        
+        for token in range(self.tokenizer.vocab_size):
+            if token not in self.sanskrit_token_ids:
+                continue
+            next_token = self.tokenizer.decode([token])
+            candidate_text = current_text + next_token
+            candidate_syllables = get_syllables_flat_improved(candidate_text)
+            
+            if len(candidate_syllables) == len(current_syllables) + 1:
+                new_syllable = candidate_syllables[-1]
+                if should_be_laghu == is_laghu(new_syllable):
+                    return candidate_text, token
+        
+        logger.warning(f"Could not find a suitable {'laghu' if should_be_laghu else 'guru'} syllable")
+        return current_text, None  # Return original text and None if no suitable syllable found
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
-        current_text = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-        current_syllables = count_syllables(current_text)
+        self.generation_step += 1
+        batch_size, seq_len = input_ids.shape
         
-        if current_syllables >= 32:
-            # If we've reached 32 syllables, only allow end of sequence token
-            scores[:, :] = float('-inf')
-            scores[:, self.tokenizer.eos_token_id] = 0
-            return scores
-        
-        non_sanskrit_mask = torch.ones_like(scores, dtype=torch.bool)
-        non_sanskrit_mask[:, self.sanskrit_token_ids] = False
-        scores[non_sanskrit_mask] = float('-inf')
-        
-        for token_idx in self.sanskrit_token_ids:
-            next_token = self.tokenizer.decode([token_idx])
-            candidate_text = current_text + next_token
-            candidate_syllables = count_syllables(candidate_text)
+        for batch_idx in range(batch_size):
+            current_text = self.tokenizer.decode(input_ids[batch_idx], skip_special_tokens=True)
+            current_syllables = get_syllables_flat_improved(current_text)
             
-            if candidate_syllables > 32:
-                scores[0, token_idx] = float('-inf')
-            elif candidate_syllables == 32:
-                if not check_anushtup_constraint(candidate_text):
-                    scores[0, token_idx] = float('-inf')
-            else:
-                if not check_partial_anushtup_constraint(candidate_text):
-                    scores[0, token_idx] = float('-inf')
+            logger.info(f"\n=== Generation Step {self.generation_step}, Batch {batch_idx} ===")
+            logger.info(f"Current text: {current_text}")
+            logger.info(f"Current syllable count: {len(current_syllables)}")
+            
+            if len(current_syllables) >= 32:
+                logger.info("Reached 32 syllables, allowing only EOS token")
+                scores[batch_idx].fill_(float('-inf'))
+                scores[batch_idx, self.tokenizer.eos_token_id] = 0
+                continue
+            
+            is_critical_position = self.is_anushtup_critical_position(len(current_syllables))
+            
+            if is_critical_position:
+                should_be_laghu = (len(current_syllables) % 8 == 4)  # 5th position should be laghu
+                new_text, forced_token = self.force_anushtup_syllable(current_text, should_be_laghu)
+                if forced_token is not None:
+                    logger.info(f"Forced {'laghu' if should_be_laghu else 'guru'} syllable: {new_text}")
+                    scores[batch_idx].fill_(float('-inf'))
+                    scores[batch_idx, forced_token] = 0
+                    return scores  # Return immediately to force the selection of this token
+            
+            # Normal beam search for non-critical positions
+            top_k = min(self.num_beams * 2, scores.size(1))
+            top_k_scores, top_k_tokens = scores[batch_idx].topk(top_k)
+            
+            candidates = []
+            logger.info("Evaluating candidate tokens:")
+            for idx, (score, token) in enumerate(zip(top_k_scores, top_k_tokens)):
+                if token.item() not in self.sanskrit_token_ids:
+                    continue
+                next_token = self.tokenizer.decode([token])
+                candidate_text = current_text + next_token
+                candidate_syllables = get_syllables_flat_improved(candidate_text)
+                
+                if len(candidate_syllables) > 32:
+                    continue
+                
+                candidates.append((score, token))
+                logger.info(f"  Token: '{next_token}', Score: {score.item():.4f}")
+            
+            if not candidates:
+                logger.warning("No suitable candidates found, using original scores")
+                continue
+            
+            # Select the top num_beams candidates
+            candidates.sort(key=lambda x: -x[0])
+            selected_candidates = candidates[:self.num_beams]
+            
+            logger.info(f"Selected top {len(selected_candidates)} candidates:")
+            for i, (score, token) in enumerate(selected_candidates):
+                logger.info(f"  {i+1}. Token: '{self.tokenizer.decode([token])}', Score: {score.item():.4f}")
+            
+            # Set all scores to -inf, then set our selected candidates' scores
+            scores[batch_idx].fill_(float('-inf'))
+            for score, token in selected_candidates:
+                scores[batch_idx, token] = score
         
         return scores
 
 
-def get_sanskrit_token_ids(tokenizer, target_lang="san_Deva"):
-    all_token_ids = list(range(tokenizer.vocab_size))
-    all_tokens = tokenizer.convert_ids_to_tokens(all_token_ids)
-    sanskrit_token_ids = [
-        token_id for token_id, token in zip(all_token_ids, all_tokens)
-        if token.startswith(target_lang) or any(char in token for char in ALPHABET)
-    ]
-    return sanskrit_token_ids
-
-def check_partial_anushtup_constraint(text: str) -> bool:
-    """Check if the given partial text adheres to the Anushtup meter rules so far"""
-    clean_text = clean(text, spaces=True)
-    syllables = get_syllables_flat_improved(clean_text)
-    num_syllables = len(syllables)
-    
-    if num_syllables > 32:
-        return False
-    
-    complete_padas = num_syllables // 8
-    remaining_syllables = num_syllables % 8
-    
-    for i in range(complete_padas):
-        pada_syllables = syllables[i*8:(i+1)*8]
-        if not is_laghu(pada_syllables[4]) or is_laghu(pada_syllables[5]):
-            return False
-        if i % 2 == 0:  # 1st and 3rd padas
-            if is_laghu(pada_syllables[6]):
-                return False
-        else:  # 2nd and 4th padas
-            if not is_laghu(pada_syllables[6]):
-                return False
-    
-    if remaining_syllables > 0:
-        last_pada_syllables = syllables[complete_padas*8:]
-        if remaining_syllables > 4:
-            if not is_laghu(last_pada_syllables[4]):
-                return False
-        if remaining_syllables > 5:
-            if is_laghu(last_pada_syllables[5]):
-                return False
-        if remaining_syllables > 6:
-            if complete_padas % 2 == 0:  # 1st or 3rd pada
-                if is_laghu(last_pada_syllables[6]):
-                    return False
-            else:  # 2nd or 4th pada
-                if not is_laghu(last_pada_syllables[6]):
-                    return False
-    
-    return True
-
 def generate_anushtup_verse(model, tokenizer, input_text: str, target_lang: str = "san_Deva") -> str:
     input_ids = tokenizer(input_text, return_tensors="pt").input_ids.to(model.device)
+    
     sanskrit_token_ids = get_sanskrit_token_ids(tokenizer, target_lang)
     
-    constraint_processor = SanskritAnushtupConstraintLogitsProcessor(tokenizer, sanskrit_token_ids)
-    progress_processor = ProgressTrackingLogitsProcessor(tokenizer)
+    num_beams = 10
     
+    # Initialize our custom LogitsProcessor
+    anushtup_processor = SanskritAnushtupLogitsProcessor(tokenizer, num_beams, sanskrit_token_ids)
+    progress_processor = ProgressTrackingLogitsProcessor(tokenizer)
+
+    logger.info(f"Generating Anushtup verse for input: {input_text}")
+    
+    # Generate
     output_ids = model.generate(
         input_ids,
-        forced_bos_token_id=tokenizer.convert_tokens_to_ids("san_Deva"),
+        forced_bos_token_id=tokenizer.convert_tokens_to_ids(target_lang),
         max_length=100,
-        num_beams=5,
+        num_beams=num_beams,
         num_return_sequences=1,
-        logits_processor=LogitsProcessorList([constraint_processor, progress_processor])
+        logits_processor=LogitsProcessorList([anushtup_processor, progress_processor]),
+        # early_stopping=True,
+        pad_token_id=tokenizer.pad_token_id,
+        eos_token_id=tokenizer.eos_token_id,
+        # top_p=0.92,
+        # do_sample=True,  # Ensure deterministic behavior
+        length_penalty=1.0,  # Neutral length penalty
+        repetition_penalty=1.0,  # No repetition penalty
     )
     
-    progress_processor.close()
     generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    logger.info(f"Generated text: {generated_text}")
+    
+    
     return generated_text
 
-# def format_anushtup_verse(verse: str) -> str:
-#     """Format the generated verse into 4 padas of 8 syllables each"""
-#     clean_verse = clean(verse)
-#     syllables = get_syllables_flat(clean_verse)
-    
-#     if len(syllables) != 32:
-#         return f"Error: Generated verse does not have 32 syllables. Actual count: {len(syllables)}"
-    
-#     formatted_padas = []
-#     for i in range(0, 32, 8):
-#         pada = ''.join(syllables[i:i+8])
-#         formatted_padas.append(pada)
-    
-#     return '\n'.join(formatted_padas)
 
 
-
-# Example usage
 import json
-with open("/home/pretam-pg/poetrygen/constrained_decoding/data.json" ,'r') as f:
+with open("./data.json" ,'r') as f:
     data = json.load(f)
 
 results = []
@@ -1494,16 +1597,16 @@ for verse in data['verses']:
     anushtup_gen['english'] = eng
     anushtup_gen['ground_truth'] = sans
     anushtup_gen['ground_truth_syllable_count'] = len(ground_truth_syllables)
-    anushtup_gen['ground_truth_syllables'] = [
-        {"syllable": syl, "type": syl_type} 
-        for syl, syl_type in ground_truth_syllables
-    ]
+    # anushtup_gen['ground_truth_syllables'] = [
+    #     {"syllable": syl, "type": syl_type} 
+    #     for syl, syl_type in ground_truth_syllables
+    # ]
     anushtup_gen['anushtup_generated'] = sanskrit_verse
     anushtup_gen['anushtup_generated_syllable_count'] = len(generated_syllables)
-    anushtup_gen['anushtup_generated_syllables'] = [
-        {"syllable": syl, "type": syl_type} 
-        for syl, syl_type in generated_syllables
-    ]
+    # anushtup_gen['anushtup_generated_syllables'] = [
+    #     {"syllable": syl, "type": syl_type} 
+    #     for syl, syl_type in generated_syllables
+    # ]
     
     results.append(anushtup_gen)
 
