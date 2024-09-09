@@ -1306,7 +1306,7 @@ def get_baahya(text: str, abbrev: bool = False):
 from tqdm import tqdm
 import os
 import re
-from typing import List
+from typing import List, Optional
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, BeamScorer, BeamSearchScorer, LogitsProcessor, LogitsProcessorList
 import torch
 import logging
@@ -1439,9 +1439,42 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
 
     def is_anushtup_critical_position(self, syllable_index: int) -> bool:
         pada_position = syllable_index % 8
-        return pada_position in [4, 5]  # 5th or 6th position in pada
+        return pada_position in [4, 5, 6]  # 5th, 6th, or 7th position in pada
 
-    def force_anushtup_syllable(self, current_text: str, should_be_laghu: bool) -> Tuple[str, int]:
+    def get_required_syllable_type(self, syllable_index: int) -> bool:
+        pada_position = syllable_index % 8
+        pada_number = syllable_index // 8
+
+        if pada_position == 4:  # 5th syllable
+            return True  # should be laghu
+        elif pada_position == 5:  # 6th syllable
+            return False  # should be guru
+        elif pada_position == 6:  # 7th syllable
+            if pada_number in [0, 2]:  # 1st and 3rd pada
+                return False  # should be DEERGHA (guru)
+            else:  # 2nd and 4th pada
+                return True  # should be HRASVA (laghu)
+        else:
+            return None  # No specific requirement
+
+    def search_within_beam(self, current_text: str, should_be_laghu: bool, top_k_tokens: torch.Tensor) -> Optional[int]:
+        current_syllables = get_syllables_flat_improved(current_text)
+        
+        for token in top_k_tokens:
+            if token.item() not in self.sanskrit_token_ids:
+                continue
+            next_token = self.tokenizer.decode([token])
+            candidate_text = current_text + next_token
+            candidate_syllables = get_syllables_flat_improved(candidate_text)
+            
+            if len(candidate_syllables) == len(current_syllables) + 1:
+                new_syllable = candidate_syllables[-1]
+                if should_be_laghu == is_laghu(new_syllable):
+                    return token.item()
+        
+        return None
+
+    def search_whole_vocab(self, current_text: str, should_be_laghu: bool) -> Optional[int]:
         current_syllables = get_syllables_flat_improved(current_text)
         
         for token in range(self.tokenizer.vocab_size):
@@ -1454,10 +1487,9 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
             if len(candidate_syllables) == len(current_syllables) + 1:
                 new_syllable = candidate_syllables[-1]
                 if should_be_laghu == is_laghu(new_syllable):
-                    return candidate_text, token
+                    return token
         
-        logger.warning(f"Could not find a suitable {'laghu' if should_be_laghu else 'guru'} syllable")
-        return current_text, None  # Return original text and None if no suitable syllable found
+        return None
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         self.generation_step += 1
@@ -1477,21 +1509,46 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
                 scores[batch_idx, self.tokenizer.eos_token_id] = 0
                 continue
             
-            is_critical_position = self.is_anushtup_critical_position(len(current_syllables))
+            current_pada = len(current_syllables) // 8
+            current_position = len(current_syllables) % 8
             
-            if is_critical_position:
-                should_be_laghu = (len(current_syllables) % 8 == 4)  # 5th position should be laghu
-                new_text, forced_token = self.force_anushtup_syllable(current_text, should_be_laghu)
-                if forced_token is not None:
-                    logger.info(f"Forced {'laghu' if should_be_laghu else 'guru'} syllable: {new_text}")
-                    scores[batch_idx].fill_(float('-inf'))
-                    scores[batch_idx, forced_token] = 0
-                    return scores  # Return immediately to force the selection of this token
-            
-            # Normal beam search for non-critical positions
+            # Get top-k tokens for the current batch
             top_k = min(self.num_beams * 2, scores.size(1))
             top_k_scores, top_k_tokens = scores[batch_idx].topk(top_k)
             
+            is_critical_position = self.is_anushtup_critical_position(len(current_syllables))
+            
+            if is_critical_position or current_position == 7:  # Include 8th position check
+                should_be_laghu = self.get_required_syllable_type(len(current_syllables))
+                
+                # First, search within the beam
+                forced_token = self.search_within_beam(current_text, should_be_laghu, top_k_tokens)
+                
+                # If not found in beam, search the whole vocabulary
+                if forced_token is None:
+                    forced_token = self.search_whole_vocab(current_text, should_be_laghu)
+                
+                if forced_token is not None:
+                    logger.info(f"Forced {'laghu' if should_be_laghu else 'guru'} syllable: {self.tokenizer.decode([forced_token])}")
+                    scores[batch_idx].fill_(float('-inf'))
+                    scores[batch_idx, forced_token] = 0
+                    return scores  # Return immediately to force the selection of this token
+                else:
+                    logger.warning(f"Could not find a suitable {'laghu' if should_be_laghu else 'guru'} syllable")
+            
+            # Ensure each pada has exactly 8 syllables
+            # if current_position == 7:
+            #     # Force the next token to complete the pada
+            #     forced_token = self.search_whole_vocab(current_text, should_be_laghu=None)  # Allow any syllable type
+            #     if forced_token is not None:
+            #         logger.info(f"Forced pada completion: {self.tokenizer.decode([forced_token])}")
+            #         scores[batch_idx].fill_(float('-inf'))
+            #         scores[batch_idx, forced_token] = 0
+            #         return scores
+            #     else:
+            #         logger.warning("Could not complete the pada")
+            
+            # Normal beam search for non-critical positions
             candidates = []
             logger.info("Evaluating candidate tokens:")
             for idx, (score, token) in enumerate(zip(top_k_scores, top_k_tokens)):
