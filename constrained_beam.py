@@ -432,13 +432,39 @@ def trim_matra(line: str) -> str:
 ###############################################################################
 
 
-def is_laghu(syllable: str) -> bool:
+def is_laghu(syllable: str, next_syllable: str = "") -> bool:
+    """
+    Determine if a syllable is laghu (short) or guru (long).
+    
+    Parameters:
+    ----------
+    syllable : str
+        The syllable to check
+    next_syllable : str, optional
+        The following syllable, used to check for conjunct consonants
+    
+    Returns:
+    -------
+    bool
+        True if the syllable is laghu, False if it's guru
+    """
+    # Check for anusvara or visarga
     if any(char in syllable for char in [ANUSWARA, VISARGA]):
         return False
-    if any(char in syllable for char in MATRA[1:] + EXTENDED_MATRA):  # Long vowels
+    
+    # Check for long vowels
+    if any(char in syllable for char in MATRA[1:] + EXTENDED_MATRA):
         return False
-    if syllable[-1] == HALANTA:
+    
+    # Check if the syllable ends with halanta
+    if syllable.endswith(HALANTA):
         return False
+    
+    # Check if the next syllable starts with a conjunct consonant
+    if next_syllable:
+        if any(char in VYANJANA for char in next_syllable[:2]):
+            return False
+    
     return True
 
 
@@ -1446,35 +1472,15 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
         pada_number = syllable_index // 8
 
         if pada_position == 4:  # 5th syllable
-            return True  # should be laghu
+            return True  # must be laghu
         elif pada_position == 5:  # 6th syllable
-            return False  # should be guru
+            return False  # must be guru
         elif pada_position == 6:  # 7th syllable
-            if pada_number in [0, 2]:  # 1st and 3rd pada
-                return False  # should be DEERGHA (guru)
-            else:  # 2nd and 4th pada
-                return True  # should be HRASVA (laghu)
+            return pada_number % 2 == 1  # laghu for 2nd and 4th padas, guru for 1st and 3rd
         else:
             return None  # No specific requirement
 
-    def search_within_beam(self, current_text: str, should_be_laghu: bool, top_k_tokens: torch.Tensor) -> Optional[int]:
-        current_syllables = get_syllables_flat_improved(current_text)
-        
-        for token in top_k_tokens:
-            if token.item() not in self.sanskrit_token_ids:
-                continue
-            next_token = self.tokenizer.decode([token])
-            candidate_text = current_text + next_token
-            candidate_syllables = get_syllables_flat_improved(candidate_text)
-            
-            if len(candidate_syllables) == len(current_syllables) + 1:
-                new_syllable = candidate_syllables[-1]
-                if should_be_laghu == is_laghu(new_syllable):
-                    return token.item()
-        
-        return None
-
-    def search_whole_vocab(self, current_text: str, should_be_laghu: bool) -> Optional[int]:
+    def enforce_syllable_type(self, current_text: str, should_be_laghu: bool, scores: torch.FloatTensor) -> torch.FloatTensor:
         current_syllables = get_syllables_flat_improved(current_text)
         
         for token in range(self.tokenizer.vocab_size):
@@ -1486,10 +1492,13 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
             
             if len(candidate_syllables) == len(current_syllables) + 1:
                 new_syllable = candidate_syllables[-1]
-                if should_be_laghu == is_laghu(new_syllable):
-                    return token
+                next_syllable = ""  # We don't need to check the next syllable here
+                if should_be_laghu == is_laghu(new_syllable, next_syllable):
+                    scores[token] = 0
+                else:
+                    scores[token] = float('-inf')
         
-        return None
+        return scores
 
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor) -> torch.FloatTensor:
         self.generation_step += 1
@@ -1509,77 +1518,23 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
                 scores[batch_idx, self.tokenizer.eos_token_id] = 0
                 continue
             
-            current_pada = len(current_syllables) // 8
-            current_position = len(current_syllables) % 8
-            
-            # Get top-k tokens for the current batch
-            top_k = min(self.num_beams * 2, scores.size(1))
-            top_k_scores, top_k_tokens = scores[batch_idx].topk(top_k)
-            
             is_critical_position = self.is_anushtup_critical_position(len(current_syllables))
             
-            if is_critical_position or current_position == 7:  # Include 8th position check
+            if is_critical_position:
                 should_be_laghu = self.get_required_syllable_type(len(current_syllables))
-                
-                # First, search within the beam
-                forced_token = self.search_within_beam(current_text, should_be_laghu, top_k_tokens)
-                
-                # If not found in beam, search the whole vocabulary
-                if forced_token is None:
-                    forced_token = self.search_whole_vocab(current_text, should_be_laghu)
-                
-                if forced_token is not None:
-                    logger.info(f"Forced {'laghu' if should_be_laghu else 'guru'} syllable: {self.tokenizer.decode([forced_token])}")
-                    scores[batch_idx].fill_(float('-inf'))
-                    scores[batch_idx, forced_token] = 0
-                    return scores  # Return immediately to force the selection of this token
-                else:
-                    logger.warning(f"Could not find a suitable {'laghu' if should_be_laghu else 'guru'} syllable")
+                scores[batch_idx] = self.enforce_syllable_type(current_text, should_be_laghu, scores[batch_idx])
+                logger.info(f"Enforced {'laghu' if should_be_laghu else 'guru'} syllable at position {len(current_syllables) + 1}")
+            else:
+                # For non-critical positions, we still ensure only Sanskrit tokens are used
+                non_sanskrit_mask = torch.ones_like(scores[batch_idx], dtype=torch.bool)
+                non_sanskrit_mask[list(self.sanskrit_token_ids)] = False
+                scores[batch_idx][non_sanskrit_mask] = float('-inf')
             
-            # Ensure each pada has exactly 8 syllables
-            # if current_position == 7:
-            #     # Force the next token to complete the pada
-            #     forced_token = self.search_whole_vocab(current_text, should_be_laghu=None)  # Allow any syllable type
-            #     if forced_token is not None:
-            #         logger.info(f"Forced pada completion: {self.tokenizer.decode([forced_token])}")
-            #         scores[batch_idx].fill_(float('-inf'))
-            #         scores[batch_idx, forced_token] = 0
-            #         return scores
-            #     else:
-            #         logger.warning("Could not complete the pada")
-            
-            # Normal beam search for non-critical positions
-            candidates = []
-            logger.info("Evaluating candidate tokens:")
-            for idx, (score, token) in enumerate(zip(top_k_scores, top_k_tokens)):
-                if token.item() not in self.sanskrit_token_ids:
-                    continue
-                next_token = self.tokenizer.decode([token])
-                candidate_text = current_text + next_token
-                candidate_syllables = get_syllables_flat_improved(candidate_text)
-                
-                if len(candidate_syllables) > 32:
-                    continue
-                
-                candidates.append((score, token))
-                logger.info(f"  Token: '{next_token}', Score: {score.item():.4f}")
-            
-            if not candidates:
-                logger.warning("No suitable candidates found, using original scores")
-                continue
-            
-            # Select the top num_beams candidates
-            candidates.sort(key=lambda x: -x[0])
-            selected_candidates = candidates[:self.num_beams]
-            
-            logger.info(f"Selected top {len(selected_candidates)} candidates:")
-            for i, (score, token) in enumerate(selected_candidates):
-                logger.info(f"  {i+1}. Token: '{self.tokenizer.decode([token])}', Score: {score.item():.4f}")
-            
-            # Set all scores to -inf, then set our selected candidates' scores
-            scores[batch_idx].fill_(float('-inf'))
-            for score, token in selected_candidates:
-                scores[batch_idx, token] = score
+            # Ensure we don't generate more than 32 syllables
+            # if len(current_syllables) == 31:
+            #     # For the last syllable, we need to ensure it completes the verse
+            #     scores[batch_idx] = self.enforce_syllable_type(current_text, None, scores[batch_idx])
+            #     logger.info("Enforcing final syllable to complete 32 syllables")
         
         return scores
 
@@ -1617,10 +1572,107 @@ def generate_anushtup_verse(model, tokenizer, input_text: str, target_lang: str 
     generated_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     logger.info(f"Generated text: {generated_text}")
     
+    # Perform Anushtup meter check
+    meter_analysis = check_anushtup_meter(generated_text)
+    print_anushtup_analysis(meter_analysis)
     
-    return generated_text
+    return generated_text, meter_analysis
 
+def check_anushtup_meter(verse: str) -> dict:
+    """
+    Check if a given verse follows the Anushtup meter rules.
+    
+    Parameters:
+    ----------
+    verse : str
+        The Sanskrit verse to check
+    
+    Returns:
+    -------
+    dict
+        A dictionary containing the analysis results
+    """
+    syllables = get_syllables_flat_improved(verse)
+    syllables_with_type = get_syllables_with_type(verse)
+    
+    result = {
+        "is_anushtup": True,
+        "total_syllables": len(syllables),
+        "padas": [],
+        "violations": []
+    }
+    
+    # Check total syllable count
+    if len(syllables) != 32:
+        result["is_anushtup"] = False
+        result["violations"].append(f"Total syllable count is {len(syllables)}, should be 32")
+    
+    # Analyze each pada
+    for i in range(4):
+        pada_start = i * 8
+        pada_end = pada_start + 8
+        pada_syllables = syllables_with_type[pada_start:pada_end]
+        
+        pada_analysis = {
+            "pada_number": i + 1,
+            "syllables": pada_syllables,
+            "violations": []
+        }
+        
+        # Check pada length
+        if len(pada_syllables) != 8:
+            result["is_anushtup"] = False
+            pada_analysis["violations"].append(f"Pada {i+1} has {len(pada_syllables)} syllables, should be 8")
+        
+        # Check 5th syllable (should be laghu)
+        if len(pada_syllables) >= 5 and pada_syllables[4][1] != 'L':
+            result["is_anushtup"] = False
+            pada_analysis["violations"].append(f"5th syllable is guru, should be laghu")
+        
+        # Check 6th syllable (should be guru)
+        if len(pada_syllables) >= 6 and pada_syllables[5][1] != 'G':
+            result["is_anushtup"] = False
+            pada_analysis["violations"].append(f"6th syllable is laghu, should be guru")
+        
+        # Check 7th syllable (odd padas: guru, even padas: laghu)
+        if len(pada_syllables) >= 7:
+            expected_7th = 'G' if i % 2 == 0 else 'L'
+            if pada_syllables[6][1] != expected_7th:
+                result["is_anushtup"] = False
+                pada_analysis["violations"].append(f"7th syllable is {'laghu' if pada_syllables[6][1] == 'L' else 'guru'}, should be {'guru' if expected_7th == 'G' else 'laghu'}")
+        
+        result["padas"].append(pada_analysis)
+        result["violations"].extend([f"Pada {i+1}: {v}" for v in pada_analysis["violations"]])
+    
+    return result
 
+def print_anushtup_analysis(analysis: dict):
+    """
+    Print a formatted analysis of the Anushtup meter check.
+    
+    Parameters:
+    ----------
+    analysis : dict
+        The analysis dictionary returned by check_anushtup_meter
+    """
+    print(f"Anushtup Meter Analysis:")
+    print(f"Total syllables: {analysis['total_syllables']}")
+    print(f"Is valid Anushtup: {'Yes' if analysis['is_anushtup'] else 'No'}")
+    
+    if analysis['violations']:
+        print("\nViolations:")
+        for violation in analysis['violations']:
+            print(f"- {violation}")
+    
+    print("\nPada Analysis:")
+    for pada in analysis['padas']:
+        print(f"\nPada {pada['pada_number']}:")
+        for i, (syllable, type_) in enumerate(pada['syllables'], 1):
+            print(f"  {i}. {syllable} ({type_})")
+        if pada['violations']:
+            print("  Violations:")
+            for violation in pada['violations']:
+                print(f"  - {violation}")
 
 import json
 with open("./data.json" ,'r') as f:
@@ -1641,29 +1693,15 @@ for verse in data['verses']:
     anushtup_gen = {}
     eng = verse['english']
     sans = verse['sanskrit']
-    sanskrit_verse = generate_anushtup_verse(model, tokenizer, eng)
+    sanskrit_verse, meter_analysis = generate_anushtup_verse(model, tokenizer, eng)
     
     print("################SANSKRIT VERSE###############")
     print(sanskrit_verse)
     
-    generated_syllables = get_syllables_with_type(sanskrit_verse)
-    ground_truth_syllables = get_syllables_with_type(sans)
-    
-    print(f"\nTotal syllables: {len(generated_syllables)}")
-    
     anushtup_gen['english'] = eng
     anushtup_gen['ground_truth'] = sans
-    anushtup_gen['ground_truth_syllable_count'] = len(ground_truth_syllables)
-    # anushtup_gen['ground_truth_syllables'] = [
-    #     {"syllable": syl, "type": syl_type} 
-    #     for syl, syl_type in ground_truth_syllables
-    # ]
     anushtup_gen['anushtup_generated'] = sanskrit_verse
-    anushtup_gen['anushtup_generated_syllable_count'] = len(generated_syllables)
-    # anushtup_gen['anushtup_generated_syllables'] = [
-    #     {"syllable": syl, "type": syl_type} 
-    #     for syl, syl_type in generated_syllables
-    # ]
+    # anushtup_gen['meter_analysis'] = meter_analysis
     
     results.append(anushtup_gen)
 
