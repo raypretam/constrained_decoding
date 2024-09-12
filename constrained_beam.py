@@ -452,10 +452,16 @@ def is_laghu(syllable: str, next_syllable: str = "") -> bool:
     if any(char in syllable for char in [ANUSWARA, VISARGA]):
         return False
     
-    # Check for long vowels
-    if any(char in syllable for char in MATRA[1:] + EXTENDED_MATRA):
+    # # Check for long vowels
+    # if any(char in syllable for char in MATRA[1:] + EXTENDED_MATRA):
+    #     return False
+    
+    if any(char in syllable for char in [MATRA[i] for i in [0, 2, 4, 6, 8, 9, 10, 11, 12]] + EXTENDED_MATRA):
         return False
     
+    if any(char in syllable for char in [SWARA[i] for i in [1, 3, 5, 7, 9, 10, 11, 12, 13]] + EXTENDED_SWARA):
+        return False
+
     # Check if the syllable ends with halanta
     if syllable.endswith(HALANTA):
         return False
@@ -1352,12 +1358,15 @@ file_handler.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 file_handler.setFormatter(formatter)
 
-logger.addHandler(file_handler)
+logger.addHandler(file_handler) 
+
+if torch.backends.mps.is_available():
+    mps_device = torch.device("mps")
 
 model_name = "facebook/nllb-200-distilled-600M"
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name).cuda()  
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-
+model.to(mps_device)
 
 def split_into_padas(text):
     clean_text = clean(text, spaces=True)
@@ -1366,6 +1375,50 @@ def split_into_padas(text):
     for i in range(0, len(syllables), 8):
         padas.append(''.join(syllables[i:i+8]))
     return padas
+
+
+def get_characters(word: str, technical: bool = False) -> List[str]:
+   """Get syllables from a Sanskrit (Devanagari) word
+
+
+   Parameters
+   ----------
+   word : str
+       Sanskrit (Devanagari) word to get syllables from.
+       Spaces, if present, are ignored.
+   technical : bool, optional
+       If True, ensures that each element contains at most
+       one Swara or Vyanjana.
+       The default is False.
+
+
+   Returns
+   -------
+   List[str]
+       List of syllables
+   """
+   word = clean(word, spaces=False)
+   wlen = len(word)
+   word_syllables = []
+
+
+   current = ""
+   i = 0
+   while i < wlen:
+       curr_ch = word[i]
+       current += curr_ch
+       i += 1
+       # words split to start at START_CHARS
+       start_chars = VARNA + SPECIAL
+       while i < wlen and word[i] not in start_chars:
+           current += word[i]
+           i += 1
+       # if current[-1] != HALANTA or i == wlen or technical:
+       #     word_syllables.append(current)
+       #     current = ""
+       word_syllables.append(current)
+       current = ""
+   return word_syllables
 
 
 def get_sanskrit_token_ids(tokenizer, target_lang="san_Deva"):
@@ -1482,7 +1535,8 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
 
     def enforce_syllable_type(self, current_text: str, should_be_laghu: bool, scores: torch.FloatTensor) -> torch.FloatTensor:
         current_syllables = get_syllables_flat_improved(current_text)
-        
+        pada_position = len(current_syllables) % 8  # Calculate the position within the pada
+
         for token in range(self.tokenizer.vocab_size):
             if token not in self.sanskrit_token_ids:
                 continue
@@ -1493,6 +1547,11 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
             if len(candidate_syllables) == len(current_syllables) + 1:
                 new_syllable = candidate_syllables[-1]
                 next_syllable = ""  # We don't need to check the next syllable here
+
+                # Check for halanta in the 6th position
+                if pada_position == 5 and HALANTA in get_characters(new_syllable)[0]:
+                    scores[token] = float('-inf')
+
                 if should_be_laghu == is_laghu(new_syllable, next_syllable):
                     scores[token] = 0
                 else:
@@ -1705,7 +1764,7 @@ for verse in data['verses']:
     
     results.append(anushtup_gen)
 
-with open("./constrained_decoding.json", 'w') as file:
+with open("./constrained_decoding_no_conj2.json", 'w') as file:
     json.dump(results, file, ensure_ascii=False, indent=4)
 
 print(f"Results written to {file}")
