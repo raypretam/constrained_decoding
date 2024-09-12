@@ -2,21 +2,21 @@
     {
         "english": "Who in this world lives today endowed with excellent qualities, prowess, righteousness, gratitude, truthfulness and firmness in his vows?",
         "ground_truth": "कोन्वस्मिन्साम्प्रतं लोके गुणवान्कश्च वीर्यवान् ।धर्मज्ञश्च कृतज्ञश्च सत्यवाक्यो दृढव्रत:।।",
-        "anushtup_generated": "वर्तमान क है कीदृशः संसार बको लब्धः उत्कृष्टगुणले कीदृशः सामर्थ ज के बको"
+        "anushtup_generated": "वर्तमान क आतादृशः संसार क आ क आतादृशगुण आ एतादृशगुण क आ क आ"
     },
     {
         "english": "Who is that one gifted with good conduct, given to the wellbeing of all living creatures, learned in the lore knowledge of all things that is known, capable of doing things which others can not do and singularly handsome?",
         "ground_truth": "चारित्रेण च को युक्तस्सर्वभूतेषु को हित: ।विद्वान्क: कस्समर्थश्च कश्चैकप्रियदर्शन: ।।",
-        "anushtup_generated": "कः स एव ह है विवक्षितः सर्वार को आचरणः सर्वारने कीर्तिनां कल्याण बले लभ"
+        "anushtup_generated": "कः स एव क आ आचारसंहिता क आ क आचारसंहिता आ आचारसंहिता क आ क आ"
     },
     {
         "english": "Who among men is selfrestrained? Who has conquered anger? Who is endowed with brilliance and free from envy? Who is that when excited to wrath even the devatas, are afraid of let alone foes?",
         "ground_truth": "आत्मवान्को जितक्रोधो द्युतिमान्कोऽनसूयक: । कस्य बिभ्यति देवाश्च जातरोषस्य संयुगे ।।",
-        "anushtup_generated": "मनुष्याणां ज से देवतानां क्रोध तले बभूवुः को क्रोध हनेहेति को तेजसा क है न ई"
+        "anushtup_generated": "मनुष्याणां क आ एवेति संयम क आ स क्रोधं पराजित आ एवेति बुद्धिमान् क आ क आ"
     },
     {
         "english": "O Maharshi, I intend to hear about such a man whom you are able to place? Indeed great is my curiosity",
         "ground_truth": "एतदिच्छाम्यहं श्रोतुं परं कौतूहलं हि मे ।महर्षे त्वं समर्थोऽसि ज्ञातुमेवंविधं नरम् ।।",
-        "anushtup_generated": "हे महर्ष ज हो कीदृशं पुरुष प में न श्रोतुमिच्छामि न से कीदृशं पुरुष त के लभ"
+        "anushtup_generated": "हे महर्ष क आतादृशपुरुष क आ क आतादृशस्य क आतादृशपुरुष क आ क आ"
     }
 ]
