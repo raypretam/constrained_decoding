@@ -1782,7 +1782,7 @@ for verse in data['verses']:
     
     results.append(anushtup_gen)
 
-with open("./constrained_decoding_pos7_full_anushtup", 'w') as file:
+with open("./constrained_decoding_full_anushtup.json", 'w') as file:
     json.dump(results, file, ensure_ascii=False, indent=4)
 
 print(f"Results written to {file}")
