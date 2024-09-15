@@ -80,6 +80,9 @@ EXTENDED_SWARA = ["ऎ", "ऒ", "ॲ", "ऑ", "ऍ"]
 MATRA = ["ा", "ि", "ी", "ु", "ू", "ृ", "ॄ", "ॢ", "ॣ", "े", "ै", "ो", "ौ"]
 EXTENDED_MATRA = ["ॆ", "ॊ", "ॅ", "ॉ"]
 
+HRASVA = ["अ", "इ", "उ", "ऋ", "ऌ"] + [MATRA[i] for i in [1, 3, 5, 7]]
+DIRGHA = ["आ", "ई", "ऊ", "ॠ", "ॡ", "ए", "ऐ", "ओ", "औ"] + [MATRA[i] for i in [0, 2, 4, 6, 8, 9, 10, 11, 12]] 
+
 KANTHYA = ["क", "ख", "ग", "घ", "ङ"]
 TALAVYA = ["च", "छ", "ज", "झ", "ञ"]
 MURDHANYA = ["ट", "ठ", "ड", "ढ", "ण"]
@@ -1366,7 +1369,7 @@ if torch.backends.mps.is_available():
 model_name = "facebook/nllb-200-distilled-600M"
 model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model.to(mps_device)
+# model.to(mps_device)
 
 def split_into_padas(text):
     clean_text = clean(text, spaces=True)
@@ -1532,10 +1535,14 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
             return pada_number % 2 == 1  # laghu for 2nd and 4th padas, guru for 1st and 3rd
         else:
             return None  # No specific requirement
+        
+    
 
     def enforce_syllable_type(self, current_text: str, should_be_laghu: bool, scores: torch.FloatTensor) -> torch.FloatTensor:
         current_syllables = get_syllables_flat_improved(current_text)
         pada_position = len(current_syllables) % 8  # Calculate the position within the pada
+        pada_number = len(current_syllables) // 8   # Calculate the current pada number (1-based index)
+    
 
         for token in range(self.tokenizer.vocab_size):
             if token not in self.sanskrit_token_ids:
@@ -1551,6 +1558,17 @@ class SanskritAnushtupLogitsProcessor(LogitsProcessor):
                 # Check for halanta in the 6th position
                 if pada_position == 5 and HALANTA in get_characters(new_syllable)[0]:
                     scores[token] = float('-inf')
+
+                # Check for hrasva or deergha in the 7th position
+                if pada_position == 6:
+                    if pada_number % 2 == 1:  
+                        if any(char in next_token for char in [MATRA[i] for i in [0, 2, 4, 6, 8, 9, 10, 11, 12]] + EXTENDED_MATRA + [SWARA[i] for i in [1, 3, 5, 7, 9, 10, 11, 12, 13]] + EXTENDED_SWARA):
+                            scores[token] = float('-inf')
+                            continue
+                    else:  
+                        if any(char in next_token for char in [MATRA[i] for i in [1, 3, 5, 7]] + [SWARA[i] for i in [0, 2, 4, 6, 8]]):
+                            scores[token] = float('-inf')
+                            continue
 
                 if should_be_laghu == is_laghu(new_syllable, next_syllable):
                     scores[token] = 0
@@ -1764,7 +1782,7 @@ for verse in data['verses']:
     
     results.append(anushtup_gen)
 
-with open("./constrained_decoding_no_conj2.json", 'w') as file:
+with open("./constrained_decoding_full_anushtup.json", 'w') as file:
     json.dump(results, file, ensure_ascii=False, indent=4)
 
 print(f"Results written to {file}")
